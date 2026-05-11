@@ -17,7 +17,7 @@ setup_page("Visão Executiva", "📊")
 
 header(
     titulo="Visão Executiva",
-    subtitulo="Indicadores agregados · Auditoria SES-GO",
+    subtitulo="Indicadores agregados · Análise das OSS · SES-GO",
 )
 
 df = load_fato()
@@ -93,37 +93,45 @@ col_oss, col_hosp = st.columns(2)
 with col_oss:
     st.markdown("### Total executado por OSS")
     df_oss = df_f.groupby("oss", as_index=False)["executados"].sum().sort_values("executados", ascending=True)
+    max_val = df_oss["executados"].max() if not df_oss.empty else 0
     fig = go.Figure(go.Bar(
         x=df_oss["executados"], y=df_oss["oss"], orientation="h",
         marker=dict(color=[OSS_COLORS.get(o, COLORS["grafite"]) for o in df_oss["oss"]]),
-        text=df_oss["executados"].apply(lambda v: f"R$ {v/1e6:.1f} mi"),
+        text=df_oss["executados"].apply(lambda v: f" R$ {v/1e6:,.1f} mi".replace(",", ".")),
         textposition="outside",
+        textfont=dict(family="Inter", size=12, color=COLORS["ink"]),
+        cliponaxis=False,
         hovertemplate="<b>%{y}</b><br>Executado: R$ %{x:,.0f}<extra></extra>",
     ))
     fig.update_layout(
-        height=440, showlegend=False,
+        height=max(360, 32 * len(df_oss) + 80), showlegend=False,
         xaxis_title="", yaxis_title="",
-        margin=dict(l=10, r=80, t=20, b=40),
+        margin=dict(l=10, r=140, t=20, b=40),
     )
-    fig.update_xaxes(tickformat="~s", tickprefix="R$ ", separatethousands=True)
+    fig.update_xaxes(tickformat="~s", tickprefix="R$ ", separatethousands=True,
+                     range=[0, max_val * 1.18] if max_val else None)
     st.plotly_chart(fig, use_container_width=True)
 
 with col_hosp:
     st.markdown("### Top 10 hospitais (executado)")
     df_hosp = df_f.groupby("hospital", as_index=False)["executados"].sum().sort_values("executados", ascending=False).head(10).sort_values("executados", ascending=True)
+    max_val = df_hosp["executados"].max() if not df_hosp.empty else 0
     fig = go.Figure(go.Bar(
         x=df_hosp["executados"], y=df_hosp["hospital"], orientation="h",
         marker=dict(color=df_hosp["executados"], colorscale=SCALE_VERDE, showscale=False),
-        text=df_hosp["executados"].apply(lambda v: f"R$ {v/1e6:.1f} mi"),
+        text=df_hosp["executados"].apply(lambda v: f" R$ {v/1e6:,.1f} mi".replace(",", ".")),
         textposition="outside",
+        textfont=dict(family="Inter", size=12, color=COLORS["ink"]),
+        cliponaxis=False,
         hovertemplate="<b>%{y}</b><br>Executado: R$ %{x:,.0f}<extra></extra>",
     ))
     fig.update_layout(
-        height=440, showlegend=False,
+        height=max(360, 32 * len(df_hosp) + 80), showlegend=False,
         xaxis_title="", yaxis_title="",
-        margin=dict(l=10, r=80, t=20, b=40),
+        margin=dict(l=10, r=140, t=20, b=40),
     )
-    fig.update_xaxes(tickformat="~s", tickprefix="R$ ", separatethousands=True)
+    fig.update_xaxes(tickformat="~s", tickprefix="R$ ", separatethousands=True,
+                     range=[0, max_val * 1.18] if max_val else None)
     st.plotly_chart(fig, use_container_width=True)
 
 # === Mapa de calor ===

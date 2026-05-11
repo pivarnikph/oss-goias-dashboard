@@ -33,6 +33,27 @@ SCALE_DOURADO = theme.SCALE_DOURADO
 header = theme.header
 hero = theme.hero
 
+# ─── Recorte oficial da análise ─────────────────────────────────────────────
+# Hospitais e período cobertos pela análise. Aplicado globalmente nas funções
+# load_*. CORA / Hospital de Amor está em fase pré-operacional — excluído.
+ANO_INICIO = 2023
+ANO_FIM = 2026
+HOSPITAIS_EXCLUIDOS = {"CORA"}   # pré-operacional
+OSS_EXCLUIDAS = {"Hospital de Amor", "Hospital de Amor (CORA)"}
+
+def _apply_scope(df, hospital_col="hospital", oss_col="oss", ano_col="ano"):
+    """Aplica filtro do recorte oficial (período 2023-2026 e exclusão de CORA)."""
+    if df is None or df.empty: return df
+    if hospital_col in df.columns:
+        df = df[~df[hospital_col].isin(HOSPITAIS_EXCLUIDOS)]
+    if oss_col in df.columns:
+        df = df[~df[oss_col].isin(OSS_EXCLUIDAS)]
+    if ano_col in df.columns:
+        df = df[(pd.to_numeric(df[ano_col], errors="coerce") >= ANO_INICIO) &
+                (pd.to_numeric(df[ano_col], errors="coerce") <= ANO_FIM)]
+    return df
+
+
 @st.cache_data(ttl=300)
 def load_fato():
     df = pd.read_csv(ANALISE_DIR / "fato_hospital_mes.csv")
@@ -41,7 +62,7 @@ def load_fato():
         if col in ("hospital", "oss", "ano_mes"): continue
         df[col] = pd.to_numeric(df[col], errors="coerce")
     df["data"] = pd.to_datetime(df["ano_mes"] + "-01", errors="coerce")
-    return df
+    return _apply_scope(df)
 
 @st.cache_data(ttl=300)
 def load_dim_hospital():
@@ -49,11 +70,14 @@ def load_dim_hospital():
 
 @st.cache_data(ttl=300)
 def load_cobertura():
-    return pd.read_csv(ANALISE_DIR / "cobertura_kpi.csv")
+    df = pd.read_csv(ANALISE_DIR / "cobertura_kpi.csv")
+    return df[~df["hospital"].isin(HOSPITAIS_EXCLUIDOS)]
 
 @st.cache_data(ttl=300)
 def load_outliers():
-    return pd.read_csv(ANALISE_DIR / "outliers.csv")
+    df = pd.read_csv(ANALISE_DIR / "outliers.csv")
+    df = df[~df["hospital"].isin(HOSPITAIS_EXCLUIDOS)] if "hospital" in df.columns else df
+    return _apply_scope(df, ano_col="ano") if "ano" in df.columns else df
 
 @st.cache_data(ttl=300)
 def load_producao_vs_meta():
@@ -61,18 +85,19 @@ def load_producao_vs_meta():
     df["realizado"] = pd.to_numeric(df["realizado"], errors="coerce")
     df["meta"] = pd.to_numeric(df["meta"], errors="coerce")
     df["perc_atingimento"] = pd.to_numeric(df["perc_atingimento"], errors="coerce")
-    return df
+    return _apply_scope(df, oss_col="oss_gestora", ano_col="periodo.ano")
 
 @st.cache_data(ttl=300)
 def load_categorias_gasto():
     df = pd.read_csv(CONSOLIDADO_DIR / "categorias_gasto.csv")
     df["valor"] = pd.to_numeric(df["valor"], errors="coerce")
     df["perc_total"] = pd.to_numeric(df["perc_total"], errors="coerce")
-    return df
+    return _apply_scope(df, oss_col="oss_gestora", ano_col="periodo.ano")
 
 @st.cache_data(ttl=300)
 def load_contratos():
-    return pd.read_csv(CONSOLIDADO_DIR / "contrato_gestao.csv")
+    df = pd.read_csv(CONSOLIDADO_DIR / "contrato_gestao.csv")
+    return _apply_scope(df, oss_col="oss_gestora", ano_col="_ano_pasta")
 
 def fmt_brl(v, decimals=0):
     if v is None or pd.isna(v): return "-"

@@ -1,4 +1,4 @@
-"""Pergunte aos Dados — chat com Claude que consulta os CSVs e responde com análise."""
+"""Pergunte aos Dados — chat com Claude que consulta os dados e responde em português."""
 import sys
 import re
 from pathlib import Path
@@ -41,10 +41,11 @@ df_cat = load_categorias_gasto()
 df_pvm = load_producao_vs_meta()
 df_contr = load_contratos()
 
-def build_data_summary():
-    return f"""Você tem acesso aos seguintes DataFrames pandas:
 
-## df_fato (tabela principal — 1 linha por hospital × ano × mês)
+def build_data_summary():
+    return f"""DATAFRAMES disponíveis:
+
+## df_fato — 1 linha por hospital × ano × mês
 Linhas: {len(df_fato)} | Colunas: {list(df_fato.columns)}
 Hospitais: {sorted(df_fato['hospital'].dropna().unique().tolist())}
 OSS: {sorted(df_fato['oss'].dropna().unique().tolist())}
@@ -53,47 +54,49 @@ Período: {df_fato['ano_mes'].min()} a {df_fato['ano_mes'].max()}
 Estatísticas-chave:
 {df_fato[['recebidos_ses','executados','devolvidos','perc_exec_financeira','consultas','internacoes','custo_por_consulta','custo_por_internacao']].describe().round(2).to_string()}
 
-## df_out (outliers já detectados)
+## df_out — outliers detectados
 Linhas: {len(df_out)} | Colunas: {list(df_out.columns)}
 
-## df_cat (categorias de gasto detalhadas)
+## df_cat — categorias de gasto
 Linhas: {len(df_cat)} | Colunas: {list(df_cat.columns)}
 
-## df_pvm (produção realizada vs meta — 1 linha por hospital × período × indicador)
+## df_pvm — produção vs meta
 Linhas: {len(df_pvm)} | Colunas: {list(df_pvm.columns)}
 
-## df_contr (contratos de gestão)
+## df_contr — contratos de gestão
 Linhas: {len(df_contr)} | Colunas: {list(df_contr.columns)}
 """
 
+
 DATA_SUMMARY = build_data_summary()
 
-SYSTEM_PROMPT = f"""Você é um analista de dados especializado em auditoria de Organizações Sociais de Saúde (OSS) do Estado de Goiás. Você tem acesso a DataFrames pandas com dados financeiros, de produção e contratuais de hospitais públicos geridos por OSS.
+SYSTEM_PROMPT = f"""Você é um analista de dados especializado em análise de Organizações Sociais de Saúde (OSS) do Estado de Goiás. Você responde perguntas sobre dados financeiros, de produção e contratuais de hospitais públicos.
 
-Para responder à pergunta do usuário, gere código Python seguro usando pandas que processa os DataFrames disponíveis. Seu código deve:
-1. Definir uma variável `resultado` com o DataFrame ou valor que responde a pergunta
-2. Opcionalmente definir `figura` como um objeto plotly.graph_objects.Figure ou plotly.express.Figure para visualizar
-3. Não usar I/O nem importar bibliotecas externas além de: pandas (pd), numpy (np), plotly.express (px), plotly.graph_objects (go)
-4. Não modificar os DataFrames originais
-5. Comentar o código brevemente
+**FORMATO OBRIGATÓRIO DA RESPOSTA:**
 
-Quando criar uma figura plotly, use a paleta institucional do Estado de Goiás:
-- Verde primário: {COLORS['verde']}
-- Verde escuro: {COLORS['verde_dark']}
-- Vermelho alerta: {COLORS['alerta']}
-- Dourado: {COLORS['dourado']}
-- Azul informação: {COLORS['info']}
+Sua resposta DEVE seguir EXATAMENTE este formato (nesta ordem):
 
-Após gerar o código, escreva uma análise narrativa curta (2-4 frases) explicando o que o resultado significa.
+1. **Resposta direta em linguagem natural** (2 a 5 frases curtas, em português claro, sem jargão técnico). Comece pela conclusão.
 
-Formato:
+2. **Bloco de código Python** entre crases triplas, marcado como python, que processa os dataframes e define:
+   - `resultado` = um DataFrame, número ou texto que responde a pergunta
+   - `figura` (opcional) = um Plotly Figure (go.Figure ou px.X) para visualizar
+
 ```python
 # código aqui
 resultado = ...
 figura = ...  # opcional
 ```
 
-**Análise:** [explicação narrativa]"""
+**REGRAS DO CÓDIGO:**
+- Use APENAS as bibliotecas já importadas: pandas (pd), numpy (np), plotly.express (px), plotly.graph_objects (go)
+- Não use I/O nem network
+- Não modifique os DataFrames originais (use .copy() se necessário)
+- Cores Plotly padrão: verde {COLORS['verde']}, alerta {COLORS['alerta']}, dourado {COLORS['amarelo']}, azul {COLORS['info']}
+
+**SE A PERGUNTA NÃO PUDER SER RESPONDIDA COM OS DADOS DISPONÍVEIS:** explique brevemente o que falta e sugira uma pergunta alternativa. Não invente dados.
+
+NÃO inclua bullets de processo, NÃO descreva o que o código vai fazer, NÃO use markdown técnico. Resposta deve parecer humana, direta e analítica."""
 
 # ===== Tip card =====
 st.markdown(
@@ -104,11 +107,10 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# ===== Sugestões em grade visual =====
+# ===== Sugestões =====
 if not st.session_state.messages:
     st.markdown(
         '<div class="section-label" style="margin-top: 1rem;">'
@@ -131,7 +133,8 @@ if not st.session_state.messages:
     for i, (icon, label, q) in enumerate(samples):
         col = cols[i % 2]
         with col:
-            if st.button(f"{icon}  **{label}** — {q}", key=f"sample_{i}", use_container_width=True, type="secondary"):
+            if st.button(f"{icon}  **{label}** — {q}", key=f"sample_{i}",
+                         use_container_width=True, type="secondary"):
                 st.session_state.pending_question = q
                 st.rerun()
 
@@ -144,8 +147,27 @@ for msg in st.session_state.messages:
         if msg.get("figure") is not None:
             st.plotly_chart(msg["figure"], use_container_width=True)
         if msg.get("code"):
-            with st.expander("Ver código gerado"):
+            with st.expander("Ver consulta executada"):
                 st.code(msg["code"], language="python")
+
+
+def _extract_code_and_text(content: str):
+    """Extrai bloco de código Python e narrativa, tolerante a variações de formato."""
+    # Tenta capturar bloco python tradicional
+    code = None
+    code_match = re.search(r"```(?:python|py)?\s*\n(.*?)```", content, re.DOTALL)
+    if code_match:
+        code = code_match.group(1).strip()
+        # Remove o bloco do texto narrativo
+        text = re.sub(r"```(?:python|py)?\s*\n.*?```", "", content, flags=re.DOTALL).strip()
+    else:
+        text = content.strip()
+
+    # Limpa marcadores técnicos que poluem leitura
+    text = re.sub(r"^\*\*An[áa]lise:\*\*\s*", "", text, flags=re.MULTILINE | re.IGNORECASE).strip()
+    text = re.sub(r"^An[áa]lise:\s*", "", text, flags=re.MULTILINE | re.IGNORECASE).strip()
+    return code, text
+
 
 # ===== Input =====
 prompt = st.chat_input("Pergunte algo sobre os dados...")
@@ -176,9 +198,7 @@ if prompt:
                 st.error(f"Erro ao consultar a IA: {e}")
                 st.stop()
 
-            code_match = re.search(r"```python\n(.*?)\n```", content, re.DOTALL)
-            code = code_match.group(1) if code_match else None
-            analise = re.sub(r"```python.*?```", "", content, flags=re.DOTALL).strip()
+            code, analise = _extract_code_and_text(content)
 
             resultado = None
             figura = None
@@ -199,40 +219,52 @@ if prompt:
                 except Exception as e:
                     erro_exec = f"{type(e).__name__}: {e}"
 
-            st.markdown(analise)
-            if erro_exec:
-                st.warning(f"⚠️ Erro ao executar o código gerado: {erro_exec}")
-                with st.expander("Ver código que falhou"):
-                    st.code(code, language="python")
+            # 1. Sempre mostra a análise narrativa em destaque
+            if analise:
+                st.markdown(analise)
             else:
-                if isinstance(resultado, pd.DataFrame):
-                    st.dataframe(resultado, use_container_width=True)
-                elif resultado is not None:
-                    if isinstance(resultado, (int, float)):
-                        st.metric("Resultado", f"{resultado:,.2f}")
-                    else:
-                        st.write(resultado)
-                if figura is not None:
-                    st.plotly_chart(figura, use_container_width=True)
-                with st.expander("Ver código gerado"):
-                    st.code(code or "(sem código gerado)", language="python")
+                st.markdown("_Não consegui formular uma resposta narrativa para esta pergunta._")
 
+            # 2. Resultado (DataFrame, número ou texto)
+            if isinstance(resultado, pd.DataFrame) and not resultado.empty:
+                st.dataframe(resultado, use_container_width=True, hide_index=True)
+            elif isinstance(resultado, (int, float)):
+                st.metric("Resultado", f"{resultado:,.2f}".replace(",", "X").replace(".", ",").replace("X", "."))
+            elif isinstance(resultado, str):
+                st.info(resultado)
+
+            # 3. Gráfico
+            if figura is not None:
+                st.plotly_chart(figura, use_container_width=True)
+
+            # 4. Aviso se a execução do código falhou — sem expor código técnico ao usuário leigo
+            if erro_exec:
+                st.warning("Ocorreu um problema ao processar essa pergunta. Tente reformulá-la ou seja mais específico.")
+
+            # 5. Código fica escondido por padrão (para quem quiser ver "como foi feito")
+            if code:
+                with st.expander("Ver consulta executada (técnico)"):
+                    st.code(code, language="python")
+                    if erro_exec:
+                        st.caption(f"Erro: {erro_exec}")
+
+            # Salva no histórico
             st.session_state.messages.append({
                 "role": "assistant",
-                "content": analise,
+                "content": analise or "_(sem resposta narrativa)_",
                 "code": code,
                 "dataframe": resultado if isinstance(resultado, pd.DataFrame) else None,
                 "figure": figura,
             })
 
-# ===== Sidebar informativa =====
+# ===== Sidebar info =====
 with st.sidebar:
     st.markdown("### Sobre o chat")
     st.markdown("""
-A inteligência artificial gera **código Python** com pandas e Plotly que é executado
-localmente sobre os dados consolidados da auditoria.
+A inteligência artificial consulta os dados consolidados da análise e responde
+em português, com gráficos e tabelas quando aplicável.
 
-**Privacidade:** apenas estatísticas descritivas dos dados (min/max/média, listas
+**Privacidade:** apenas estatísticas descritivas (min/max/média, listas
 de hospitais e OSS) são enviadas à IA — nunca os valores brutos individuais.
 
 **Dica:** para perguntas comparativas, mencione explicitamente quais hospitais

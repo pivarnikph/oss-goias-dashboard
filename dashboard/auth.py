@@ -44,7 +44,7 @@ def require_auth():
             </div>
             <h1 style="font-size: 1.5rem; font-weight: 700; color: #0F172A;
                        margin: 0.5rem 0 0.5rem 0; letter-spacing: -0.02em;">
-                Painel de Auditoria das OSS
+                Painel de Análise das OSS
             </h1>
             <p style="font-size: 0.9rem; color: #4B5563; margin: 0;">
                 Acesso restrito · informe a senha de acesso

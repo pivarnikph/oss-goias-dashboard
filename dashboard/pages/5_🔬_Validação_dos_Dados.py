@@ -22,7 +22,7 @@ header(
     titulo="Validação dos Dados",
     subtitulo="Metodologia da extração, fontes utilizadas e checks de qualidade da informação.",
     pill="Transparência",
-    eyebrow="Auditoria SES-GO · Qualidade de dados",
+    eyebrow="Análise SES-GO · Qualidade de dados",
 )
 
 df = load_fato()
@@ -41,7 +41,7 @@ st.markdown(
 st.markdown(
     f"""<div class="tip-card">
     <div class="tip-card-icon">🔁</div>
-    <p class="tip-card-text"><strong>Reproduzível por completo.</strong> O pipeline é uma sequência de scripts numerados em <code>_scripts/</code> que partem das URLs dos portais e terminam no dataset KPI consolidado. Cada documento tem hash SHA-256 registrado para auditoria.</p>
+    <p class="tip-card-text"><strong>Reproduzível por completo.</strong> O pipeline é uma sequência de scripts numerados em <code>_scripts/</code> que partem das URLs dos portais e terminam no dataset KPI consolidado. Cada documento tem hash SHA-256 registrado para análise.</p>
 </div>""",
     unsafe_allow_html=True,
 )
@@ -228,7 +228,7 @@ vc4.metric("Financeiros concordantes", "100%", help="23 de 23 documentos finance
 st.markdown(
     f"""<div class="tip-card">
     <div class="tip-card-icon">✅</div>
-    <p class="tip-card-text"><strong>Veredito da validação:</strong> dados financeiros 100% concordantes entre dois modelos distintos (Sonnet 4.6 e Opus 4.7). As 18 divergências detectadas concentram-se em campos operacionais de relatórios gerenciais com formato heterogêneo (consultas, exames) — não afetam as métricas financeiras consolidadas que servem de base à auditoria.</p>
+    <p class="tip-card-text"><strong>Veredito da validação:</strong> dados financeiros 100% concordantes entre dois modelos distintos (Sonnet 4.6 e Opus 4.7). As 18 divergências detectadas concentram-se em campos operacionais de relatórios gerenciais com formato heterogêneo (consultas, exames) — não afetam as métricas financeiras consolidadas que servem de base à análise.</p>
 </div>""",
     unsafe_allow_html=True,
 )
@@ -238,7 +238,7 @@ st.markdown(
 # ─────────────────────────────────────────────────────────────
 st.markdown(
     '<div class="section-label"><h2 class="section-label-title">Limitações conhecidas</h2>'
-    '<p class="section-label-hint">O que esta auditoria não cobre</p></div>',
+    '<p class="section-label-hint">O que esta análise não cobre</p></div>',
     unsafe_allow_html=True,
 )
 
@@ -246,9 +246,9 @@ limits = [
     ("warn", "PDFs escaneados sem OCR",
      "14 documentos antigos (pré-2020) têm baixa qualidade de OCR. Foram tratados como 'informativos' não-validados e excluídos das estatísticas críticas."),
     ("warn", "Heterogeneidade de formatos",
-     "6 padrões distintos de cabeçalho para relatório mensal e 11 variantes de nomenclatura para 'Albert Einstein'. Padronização (IN SES-GO) é recomendação ativa desta auditoria."),
+     "6 padrões distintos de cabeçalho para relatório mensal e 11 variantes de nomenclatura para 'Albert Einstein'. Padronização (IN SES-GO) é recomendação ativa desta análise."),
     ("warn", "Indicadores qualitativos",
-     "A auditoria mede execução financeira e produção quantitativa. Qualidade clínica, satisfação do paciente e desfechos não estão no escopo."),
+     "A análise mede execução financeira e produção quantitativa. Qualidade clínica, satisfação do paciente e desfechos não estão no escopo."),
     ("warn", "Dados pré-2023",
      "Apenas séries históricas para contexto — não constituem base de conclusão executiva. Pré-2023 fica fora do recorte oficial."),
 ]
@@ -271,7 +271,7 @@ for i, (tag, title, desc) in enumerate(limits):
 # ─────────────────────────────────────────────────────────────
 st.markdown(
     '<div class="section-label"><h2 class="section-label-title">Artefatos reproduzíveis</h2>'
-    '<p class="section-label-hint">Datasets e scripts disponíveis para auditoria externa</p></div>',
+    '<p class="section-label-hint">Datasets e scripts disponíveis para análise externa</p></div>',
     unsafe_allow_html=True,
 )
 
@@ -295,7 +295,7 @@ st.markdown(
 st.markdown(
     f"""<div style="margin-top: 3rem; padding-top: 1.25rem; border-top: 1px solid {COLORS['border']};
             font-size: 0.8125rem; color: {COLORS['text_muted']};">
-    Esta página é gerada dinamicamente a partir dos próprios datasets da auditoria —
+    Esta página é gerada dinamicamente a partir dos próprios datasets da análise —
     se os dados mudarem, os números desta página mudam automaticamente.
 </div>""",
     unsafe_allow_html=True,

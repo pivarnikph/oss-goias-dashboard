@@ -1,4 +1,4 @@
-"""Tema do dashboard — hub central da auditoria OSS-GO.
+"""Tema do dashboard — hub central da análise OSS-GO.
 
 Princípios:
 - Hub central: home convida exploração, atalhos visíveis, achados em destaque
@@ -926,7 +926,7 @@ def apply():
         _template_registered = True
 
 
-def header(titulo, subtitulo=None, pill=None, eyebrow="Auditoria SES-GO"):
+def header(titulo, subtitulo=None, pill=None, eyebrow="Análise SES-GO"):
     """Header de página interna — pequeno eyebrow + título grande + subtítulo."""
     pill_html = f'<span class="clean-pill">{pill}</span>' if pill else ""
     sub_html = f'<p class="clean-subtitle">{subtitulo}</p>' if subtitulo else ""
@@ -943,7 +943,7 @@ def header(titulo, subtitulo=None, pill=None, eyebrow="Auditoria SES-GO"):
     )
 
 
-def hero(titulo, subtitulo, meta=None, eyebrow="Auditoria das OSS · Estado de Goiás"):
+def hero(titulo, subtitulo, meta=None, eyebrow="Análise das OSS · Estado de Goiás"):
     """Hero para a home — header rico com gradiente verde Goiás.
 
     `meta` é lista de tuplas (label, value) exibidas em linha abaixo do título.

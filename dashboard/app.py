@@ -1,9 +1,4 @@
-"""Dashboard de Auditoria — OSS Saúde de Goiás · Hub central.
-
-A home é o ponto de partida da auditoria: hero com indicadores,
-busca rápida por hospital, achados em destaque e atalhos visuais
-para as 4 áreas de análise.
-"""
+"""Dashboard de Análise — OSS Saúde de Goiás · Hub central."""
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -11,12 +6,12 @@ sys.path.insert(0, str(Path(__file__).parent))
 import streamlit as st
 from utils import (
     setup_page, load_fato, load_cobertura, load_outliers,
-    fmt_brl, fmt_pct, hero, COLORS,
+    fmt_brl, fmt_pct, hero, COLORS, ANO_INICIO, ANO_FIM,
 )
 
-setup_page("Hub da Auditoria", "🏥")
+setup_page("Hub de Análise", "🏥")
 
-# ===== Carregamento de dados =====
+# ===== Carregamento de dados (já filtrados ao recorte oficial) =====
 df = load_fato()
 cob = load_cobertura()
 out = load_outliers()
@@ -26,40 +21,85 @@ total_executado = df["executados"].sum()
 total_devolvido = df["devolvidos"].sum()
 perc_exec = (total_executado / total_recebido * 100) if total_recebido > 0 else 0
 n_hosp = cob["hospital"].nunique()
-n_oss = df["oss"].dropna().nunique()
-n_meses = df["ano_mes"].nunique()
-periodo_ini = df["ano_mes"].min()
-periodo_fim = df["ano_mes"].max()
+oss_lista = sorted(df["oss"].dropna().unique().tolist())
+n_oss = len(oss_lista)
+PERIODO_ROTULO = f"Jan/{ANO_INICIO} → Dez/{ANO_FIM}"
 
-# ===== Sidebar info (consistente em todas as páginas via setup_page; aqui adicionamos contextual) =====
+# ===== Sidebar contextual =====
 with st.sidebar:
     st.markdown(
         f"""<div style="padding: 0.75rem 0.5rem 1rem 0.5rem; margin-bottom: 0.5rem;
         border-bottom: 1px solid {COLORS['border']};">
         <div style="font-size: 0.7rem; color: {COLORS['text_muted']}; text-transform: uppercase;
-                    letter-spacing: 0.08em; font-weight: 600;">SES-GO · Auditoria</div>
+                    letter-spacing: 0.08em; font-weight: 600;">SES-GO · Análise das OSS</div>
         <div style="font-size: 1rem; color: {COLORS['ink']}; font-weight: 700; margin-top: 0.15rem;">
             Painel das OSS
         </div>
         <div style="font-size: 0.78rem; color: {COLORS['text_muted']}; margin-top: 0.2rem;">
-            {periodo_ini} → {periodo_fim}
+            Recorte oficial: {PERIODO_ROTULO}
         </div>
     </div>""",
         unsafe_allow_html=True,
     )
 
-# ===== Hero (gradiente verde com indicadores-chave) =====
+# ===== Hero =====
 hero(
-    titulo="Auditoria das Organizações Sociais de Saúde",
-    subtitulo="Análise consolidada dos contratos de gestão das OSS contratadas pela SES-GO. Explore indicadores, investigue achados ou pergunte diretamente aos dados.",
+    titulo="Análise das Organizações Sociais de Saúde",
+    subtitulo="Análise consolidada dos contratos de gestão das OSS contratadas pela SES-GO. "
+              "Explore indicadores, investigue achados ou pergunte diretamente aos dados.",
     meta=[
         ("Hospitais", str(n_hosp)),
         ("OSS gestoras", str(n_oss)),
-        ("Período", f"{periodo_ini} → {periodo_fim}"),
+        ("Período", PERIODO_ROTULO),
     ],
 )
 
-# ===== Linha de KPIs principais — com helper texts =====
+# ===== Bloco de Escopo da Análise =====
+st.markdown(
+    '<div class="section-label" style="margin-top: 0;">'
+    '<h2 class="section-label-title">Escopo desta análise</h2>'
+    '<p class="section-label-hint">Quais OSS / hospitais estão sendo analisados</p></div>',
+    unsafe_allow_html=True,
+)
+
+# Lista de OSS com seus hospitais
+oss_hosp = df.groupby("oss")["hospital"].unique().to_dict()
+oss_chips = ""
+for oss in oss_lista:
+    hospitais = sorted({h for h in oss_hosp.get(oss, []) if isinstance(h, str)})
+    chip = f"""<div style="display: inline-flex; flex-direction: column; gap: 0.2rem;
+                background: {COLORS['surface']}; border: 1px solid {COLORS['border']};
+                border-radius: 10px; padding: 0.65rem 0.85rem; margin: 0 0.4rem 0.4rem 0;">
+        <div style="font-size: 0.875rem; font-weight: 600; color: {COLORS['ink']};">{oss}</div>
+        <div style="font-size: 0.78rem; color: {COLORS['text_muted']};">{', '.join(hospitais) if hospitais else '—'}</div>
+    </div>"""
+    oss_chips += chip
+
+st.markdown(
+    f"""<div style="background: {COLORS['surface']}; border: 1px solid {COLORS['border']};
+    border-radius: 14px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;">
+    <div style="display: flex; gap: 0.6rem; margin-bottom: 0.85rem; align-items: flex-start;">
+        <div style="font-size: 1.05rem; flex-shrink: 0;">ℹ️</div>
+        <div>
+            <div style="font-size: 0.95rem; font-weight: 600; color: {COLORS['ink']}; margin-bottom: 0.15rem;">
+                Esta análise cobre {n_oss} OSS gestoras e {n_hosp} unidades hospitalares.
+            </div>
+            <div style="font-size: 0.85rem; color: {COLORS['text']}; line-height: 1.5;">
+                <strong>Não inclui todas as OSS contratadas no Estado.</strong>
+                Foram selecionadas as OSS com contratos de gestão ativos e portais de transparência
+                publicando relatórios mensais comparativos no recorte oficial ({PERIODO_ROTULO}).
+                Unidades em fase pré-operacional ou de construção estão fora do escopo.
+            </div>
+        </div>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-start;">
+        {oss_chips}
+    </div>
+</div>""",
+    unsafe_allow_html=True,
+)
+
+# ===== Linha de KPIs principais =====
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Recebido SES-GO", fmt_brl(total_recebido),
           help="Total repassado pela SES-GO às OSS no período")
@@ -72,7 +112,7 @@ c4.metric("% Execução", fmt_pct(perc_exec),
 
 # ===== Busca rápida =====
 st.markdown(
-    f"""<div class="quick-search-card">
+    f"""<div class="quick-search-card" style="margin-top: 2rem;">
     <div class="quick-search-title">🔎 Acesso rápido por hospital</div>
     <p class="quick-search-hint">Selecione um hospital para ir direto ao painel detalhado dele — financeiro, produção, custos e atipicidades em um só lugar.</p>
 </div>""",
@@ -100,16 +140,16 @@ with qc2:
         st.session_state["hospital_filter"] = sel_hosp
         st.switch_page("pages/2_🏥_Por_Hospital.py")
 
-# ===== Achados em destaque =====
+# ===== Síntese executiva =====
 st.markdown(
-    '<div class="section-label"><h2 class="section-label-title">Achados em destaque</h2>'
-    '<p class="section-label-hint">Síntese executiva da auditoria 2026</p></div>',
+    '<div class="section-label"><h2 class="section-label-title">Síntese executiva</h2>'
+    '<p class="section-label-hint">Principais achados do levantamento</p></div>',
     unsafe_allow_html=True,
 )
 
 findings = [
     ("ok", "Execução agregada saudável (101,9%)",
-     "Os R$ 3,57 bi repassados foram executados dentro de parâmetros normais. Sem indícios de fraude sistêmica."),
+     "Os R$ 3,57 bi repassados foram executados dentro de parâmetros normais. Sem indícios de desvio sistêmico."),
     ("warn", "Concentração elevada em uma OSS",
      "AGIR/HUGOL responde sozinha por 39,3% do gasto. Top-2 OSS concentram 54%. HHI = 2.119 — risco estrutural."),
     ("info", "13 outliers operacionais investigados",
@@ -130,10 +170,84 @@ for i, (tag, title, desc) in enumerate(findings):
         unsafe_allow_html=True,
     )
 
-# ===== Navegação principal (hub cards) =====
+# ===== ⚠️ PONTOS QUE REQUEREM INVESTIGAÇÃO (SES / CGE) =====
 st.markdown(
-    '<div class="section-label"><h2 class="section-label-title">Explorar a auditoria</h2>'
-    '<p class="section-label-hint">Quatro caminhos de análise — escolha por onde começar</p></div>',
+    '<div class="section-label" style="margin-top: 2.5rem;">'
+    '<h2 class="section-label-title">⚠️ Pontos que requerem investigação</h2>'
+    '<p class="section-label-hint">Achados</p></div>',
+    unsafe_allow_html=True,
+)
+
+investigacoes = [
+    {
+        "tag": "crit",
+        "tit": "Saldo bancário crescente sem execução proporcional — HETRIN",
+        "desc": "HETRIN apresenta execução acima do repasse SES (126%) explicada por saldo "
+                "bancário inicial de R$ 37 mi com drawdown de R$ 15 mi. Investigar origem do "
+                "saldo histórico e se há devolução pendente.",
+        "ord": "Conferência contábil das contas vinculadas + revisão da prestação de contas de anos anteriores."
+    },
+    {
+        "tag": "crit",
+        "tit": "Risco de concentração contratual — AGIR/HUGOL",
+        "desc": "Um único contrato (AGIR-HUGOL) responde por 39,3% do orçamento total das OSS analisadas. "
+                "Não há OSS no portfólio capaz de absorver 100% da operação em caso de ruptura. "
+                "Plano de contingência (recomendação #3) precisa ser formalizado.",
+        "ord": "Estudo jurídico-técnico de divisão funcional do HUGOL + pré-qualificação de OSS-âncora emergencial."
+    },
+    {
+        "tag": "warn",
+        "tit": "Heterogeneidade de formatos de reporte mensal",
+        "desc": "6 padrões distintos de cabeçalho para relatório mensal e 11 variantes de nomenclatura "
+                "para a mesma OSS gestora dificultam consolidação. 12% dos relatórios sequer publicam "
+                "campo de 'outras fontes de receita'.",
+        "ord": "Publicar a Instrução Normativa SES-GO de padronização (minuta já produzida) com prazo de adequação de 120 dias."
+    },
+    {
+        "tag": "warn",
+        "tit": "Ausência de dados de produção em alguns períodos",
+        "desc": "Hospitais com cobertura de produção abaixo de 80%: PFRE, HEJ, HUGO. Pode indicar "
+                "lacuna de publicação ou problema na transparência ativa da OSS.",
+        "ord": "Notificar OSS para regularização da publicação de relatórios gerenciais."
+    },
+    {
+        "tag": "info",
+        "tit": "Glosas pouco documentadas",
+        "desc": "Categoria 'glosas' aparece em apenas uma fração dos relatórios. Não há padronização "
+                "entre OSS para reportar glosa por meta, por residentes ou por outras retenções.",
+        "ord": "Incluir glosas como campo obrigatório na padronização (junto com sub-tipos)."
+    },
+    {
+        "tag": "info",
+        "tit": "Indicadores qualitativos não auditados",
+        "desc": "Esta análise mede execução financeira e produção quantitativa. Qualidade clínica, "
+                "satisfação do paciente, desfechos e tempo de espera NÃO foram avaliados.",
+        "ord": "Próxima fase: integrar com SIH/SUS, e-SUS, e indicadores de qualidade da SES."
+    },
+]
+icones = {"crit": "!", "warn": "!", "info": "i", "ok": "✓"}
+for inv in investigacoes:
+    st.markdown(
+        f"""<div class="finding-card" style="margin-bottom: 0.85rem;">
+        <div class="finding-tag {inv['tag']}">{icones[inv['tag']]}</div>
+        <div class="finding-content">
+            <h4 class="finding-title">{inv['tit']}</h4>
+            <p class="finding-desc">{inv['desc']}</p>
+            <p class="finding-desc" style="margin-top: 0.4rem;
+                    border-left: 3px solid {COLORS['verde']}; padding-left: 0.65rem;
+                    font-size: 0.83rem; color: {COLORS['text']};">
+                <strong>Ação sugerida:</strong> {inv['ord']}
+            </p>
+        </div>
+    </div>""",
+        unsafe_allow_html=True,
+    )
+
+# ===== Navegação principal =====
+st.markdown(
+    '<div class="section-label" style="margin-top: 2.5rem;">'
+    '<h2 class="section-label-title">Explorar a análise</h2>'
+    '<p class="section-label-hint">Cinco caminhos — escolha por onde começar</p></div>',
     unsafe_allow_html=True,
 )
 
@@ -195,7 +309,7 @@ for i, item in enumerate(nav_items):
             ):
                 st.switch_page(item["page"])
 
-# ===== Cobertura por hospital =====
+# ===== Cobertura =====
 st.markdown(
     '<div class="section-label"><h2 class="section-label-title">Cobertura de dados por hospital</h2>'
     '<p class="section-label-hint">% de meses com dado disponível por tipo de indicador</p></div>',
@@ -227,7 +341,7 @@ st.markdown(
     f"""<div style="margin-top: 4rem; padding-top: 1.5rem; border-top: 1px solid {COLORS['border']};
             font-family: 'Inter', sans-serif; font-size: 0.8125rem; color: {COLORS['text_muted']};
             display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-    <span>Pipeline reproduzível · SHA-256 auditável · validação cruzada por modelo independente</span>
+    <span>Pipeline reproduzível · SHA-256 verificável · validação cruzada por modelo independente</span>
     <span>Secretaria de Estado da Saúde · Goiás · 2026</span>
 </div>""",
     unsafe_allow_html=True,
