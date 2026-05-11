@@ -1,0 +1,45 @@
+# ─── ALLOW-LIST: somente o dashboard sobe para o repo de deploy ───
+# Estratégia: ignora arquivos por padrão, libera apenas o necessário.
+
+# Arquivos da raiz — ignora tudo, depois libera os do deploy
+/*
+
+# Libera arquivos da raiz necessários
+!/.gitignore
+!/.python-version
+!/DEPLOY.md
+!/README.md
+!/requirements.txt
+
+# Libera diretórios necessários (mas filtra subconteúdo)
+!/dashboard/
+!/.streamlit/
+!/_extractions/
+
+# Streamlit: apenas config e example (NUNCA secrets.toml)
+.streamlit/secrets.toml
+
+# Extractions: apenas o consolidado vai para o repo
+/_extractions/*
+!/_extractions/_consolidado/
+
+# Bloqueios de segredos (defesa em profundidade)
+.api-key
+*.env
+**/secrets.toml
+**/credentials*
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.venv/
+venv/
+env/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

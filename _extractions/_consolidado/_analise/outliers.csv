@@ -1,0 +1,14 @@
+hospital,oss,ano_mes,metric,valor,zscore,executados,qtd_unidades
+CORA,Hospital de Amor,2025-06,custo_por_consulta,103710.09939393938,14.58,3422433.28,
+CORA,Hospital de Amor,2025-06,custo_por_internacao,180128.06736842103,9.82,3422433.28,
+HDT,ISG,2023-10,custo_por_cirurgia,975397.42125,9.4,7803179.37,
+HUGO,Albert Einstein,2025-04,custo_por_consulta,39697.08178519594,5.13,27351289.35,
+CORA,Hospital de Amor,2025-07,custo_por_cirurgia,481765.18333333335,4.31,4335886.65,
+CORA,Hospital de Amor,2025-11,custo_por_cirurgia,469763.9608333334,4.19,5637167.53,
+CORA,Hospital de Amor,2025-08,custo_por_cirurgia,452606.5633333333,4.01,4073459.07,
+CORA,Hospital de Amor,2026-01,custo_por_internacao,83879.83686046512,3.92,7213665.97,
+CREDEQ,ABEVIDA,2020-02,custo_por_internacao,79772.53522727272,3.67,3509991.55,
+CORA,Hospital de Amor,2025-07,custo_por_internacao,78834.30272727273,3.61,4335886.65,
+CORA,Hospital de Amor,2026-01,custo_por_cirurgia,379666.63,3.26,7213665.97,
+HETRIN,IMED,2025-08,custo_por_leito_mes,270796.11410714284,2.95,15164582.39,56.0
+CREDEQ,ABEVIDA,2020-03,custo_por_internacao,64071.45754716981,2.7,3395787.25,
